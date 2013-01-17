@@ -11,47 +11,64 @@ require 'pp'
 # http://www.apple.com/itunes/affiliates/resources/documentation/itunes-store-web-service-search-api.html
 
 class SimpleApp
-	def call(env)
-		country='JP'
-		media='music'
-		attribute='songTerm'
-		limit=5
 
-		# GET REQUEST
-		request = Rack::Request.new(env)
-		query = request.params['q']
+	def genReqURI2iTunes(req)
+		country = req.params['country'] || 'JP'
+		term = req.params['term'] || 'hatsunemiku'
+		media = req.params['media']  || 'music'
+		entity = req.params['entity'] || 'song'
+		attribute = req.params['attribute'] || 'artistTerm'
+		limit = req.params['limit'] || 5
 
-		# リクエスト毎にAPI問い合わせ
-		## NOTE: ネットにつながってないとつかえませんよ
-		uri = URI.parse(
+		# リクエストURI生成
+		URI.parse(
 			"http://itunes.apple.com/search?"\
 			"country=#{country}"\
-			"&term=#{query}"\
+			"&term=#{term}"\
 			"&media=#{media}"\
+			"&entity=#{entity}"\
 			"&attribute=#{attribute}"\
 			"&limit=#{limit}"
 		)
+	end
+
+	def call(env)
+		# GET REQUEST
+		request = Rack::Request.new(env)
+
 		# API Call
+		uri = genReqURI2iTunes(request)
 		doc = uri.read
 
 		# Format contents
 		## html5media.jsはfirefoxでのaudioタグ用
-		res_head = "<html><head><title>iTunes Previewer</title><script type='text/javascript' src='http://api.html5media.info/1.1.4/html5media.min.js'></script></head><body>"
-		res_body = "<h3>Search query: #{query}</h3>URL: <a target='#blank' href=#{uri}>#{uri}</a><br>"
+		res_js = "<script type='text/javascript' src='http://api.html5media.info/1.1.4/html5media.min.js'></script>"
+		title = "iTunes Previewer"
+		res_head = "<!DOCTYPE html><html lang='ja'><head><meta charset=utf-8><title>#{title}</title>#{res_js}</head><body>"
+		res_body = "<h3>Search query: #{request.params['term']}</h3>URL: <a target='#blank' href=#{uri}>#{uri}</a><br>"
 
 		resObj = JSON.parse(doc)
 		count = resObj['resultCount']
 		res_body << "Result count: #{count}<br>"
 
+		is_first = true
 		resObj['results'].each { |con|
+			res_body << "<img src=#{con['artworkUrl100']}><br>"
 			res_body << "Track: #{con['trackName']} <br> Artist: #{con['artistName']}<br>"
-			res_body << "<audio src=#{con['previewUrl']} controls>"
+			res_body << "Genre: #{con['primaryGenreName']}"
+			if is_first then
+				res_body << "<audio controls autoplay>"
+				is_first = false
+			else
+				res_body << "<audio controls >"
+			end
+			res_body << "<source src=#{con['previewUrl']} />"
 			res_body << "<p>音声を再生するには、audioタグをサポートしたブラウザが必要です。</p>"
 			res_body << "</audio><br>"
+			
 		}
 
 		res_foot =  "</body></html>"
-
 
 		# RESPONSE
 		res_str = res_head + res_body + res_foot
@@ -62,15 +79,3 @@ class SimpleApp
 	end
 end
 run SimpleApp.new
-
-=begin
-resObj = JSON.parse(doc)
-count = resObj['resultCount']
-puts "取得件数: #{count}"
-resObj['results'].each { |con|
-	puts "============"
-	puts "TrackName: #{con['trackName']}"
-	puts "Artist: #{con['artistName']}"
-	puts "Preview: #{con['previewUrl']}"
-}
-=end
