@@ -32,19 +32,32 @@ class SimpleApp
 		)
 	end
 
+
+	# 簡易テンプレートエンジン
+	def formatTemplate(tpl_file_name,val_hash)
+		contents = ""
+		File::open(tpl_file_name) {|f|
+		  while line = f.gets
+			val_hash.each {|k,v|
+				# ハッシュに登録された変数を展開
+				line.sub!(k,v)
+			}
+			contents << line
+		  end
+		}
+		return contents
+	end
+
+
 	def call(env)
-		# GET REQUEST
+		# Get request
 		request = Rack::Request.new(env)
 
 		# API Call
 		uri = genReqURI2iTunes(request)
 		doc = uri.read
 
-		# Format contents
-		## html5media.jsはfirefoxでのaudioタグ用
-		res_js = "<script type='text/javascript' src='http://api.html5media.info/1.1.4/html5media.min.js'></script>"
-		title = "iTunes Previewer"
-		res_head = "<!DOCTYPE html><html lang='ja'><head><meta charset=utf-8><title>#{title}</title>#{res_js}</head><body>"
+		# Generate contents body
 		res_body = "<h3>Search query: #{request.params['term']}</h3>URL: <a target='#blank' href=#{uri}>#{uri}</a><br>"
 
 		resObj = JSON.parse(doc)
@@ -68,10 +81,15 @@ class SimpleApp
 			
 		}
 
-		res_foot =  "</body></html>"
-
-		# RESPONSE
-		res_str = res_head + res_body + res_foot
+		# Use template
+		res_str = formatTemplate("index.html",
+			{
+				"__title__"=> "iTunesPreviewer",
+				"__body__" => res_body
+			}
+		)
+		
+		# Response
 		response = Rack::Response.new([res_str], 200, {'Content-Type' => 'text/html','charset' => 'shift_jis'})
 		response["Content-Length"] = res_str.bytesize.to_s
 
