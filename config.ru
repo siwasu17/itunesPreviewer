@@ -14,10 +14,10 @@ class SimpleApp
 
 	def genReqURI2iTunes(req)
 		country = req.params['country'] || 'JP'
-		term = req.params['term'] || 'hatsunemiku'
+		term = req.params['term'] || 'miku'
 		media = req.params['media']  || 'music'
 		entity = req.params['entity'] || 'song'
-		attribute = req.params['attribute'] || 'artistTerm'
+		attribute = req.params['attribute'] || 'songTerm'
 		limit = req.params['limit'] || 5
 
 		# リクエストURI生成
@@ -61,35 +61,46 @@ class SimpleApp
 		resObj = JSON.parse(doc)
 
 		count = resObj['resultCount']
-		res_body = "<h3>Search query: #{request.params['term']}</h3>URL: <a target='#blank' href=#{uri}>#{uri}</a><br>"
-		res_body << "Result count: #{count}<br>"
+		resBody = "<h3>Search query: #{request.params['term']}</h3>URL: <a target='#blank' href=#{uri}>#{uri}</a><br>"
+		resBody << "Result count: #{count}<br>"
 
-		trackNo = 1
+		trackNo = 0
+		isFirst = true
 
-		res_body << "<div id='slider' style='width:420px; height:200px'>"
+		resBody << "<div id='slider' style='width:420px; height:200px'>"
 		resObj['results'].each { |con|
-			res_body << <<-"EOS"
+			if isFirst then
+				audioTagHead = "<audio id=a_#{trackNo} controls autoplay >"
+				isFirst = false
+			else
+				audioTagHead = "<audio id=a_#{trackNo} controls autoplay >"
+			end
+
+			resBody << <<-"EOS"
 				<div id=t_#{trackNo} >
-					<img src=#{con['artworkUrl100']}>
-					<audio id=a_#{trackNo} controls autoplay>
-					<source src=#{con['previewUrl']} />
-					<p>音声を再生するには、audioタグをサポートしたブラウザが必要です。</p>
+					<div id=img_#{trackNo} style='float:left;'>
+						<img src=#{con['artworkUrl100']}>
+					</div>
+					track: #{con['trackName']}<br>
+					artist: #{con['artistName']}<br>
+					genre: #{con['primaryGenreName']}
+					#{audioTagHead}	
+						<source src=#{con['previewUrl']} />
+						<p>To play music, you need a browser that supports audio tag.</p>
 					</audio>
-					Track: #{con['trackName']}<br>
-					Artist: #{con['artistName']}<br>
-					Genre: #{con['primaryGenreName']}
+					<div style='clear:both;'></div>
 				</div>
 			EOS
 
 			trackNo = trackNo + 1	
 		}
-		res_body << "</div>"
+		resBody << "</div>"
 
 		# Use template
 		res_str = formatTemplate("index.html",
 			{
 				"__title__"=> "iTunesPreviewer",
-				"__body__" => res_body,
+				"__body__" => resBody,
 			}
 		)
 		

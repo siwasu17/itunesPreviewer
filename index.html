@@ -9,9 +9,16 @@
 <link href="css/jquery.slider.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
 $(function(){
-	$('#slider').slider({autoplay: true, wait: 31000, randomize: false, showControls:false});
-})
 
+	var slideBeforeHook = function(){
+	};
+
+	var slideAfterHook = function(){
+	};
+
+	$('#slider').slider({autoplay: true,wait:30000,randomize: false, showControls:true, slidebefore: slideBeforeHook, slideafter: slideAfterHook });
+
+})
 </script>
 <title>__title__</title>
 </head>
