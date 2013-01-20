@@ -58,36 +58,29 @@ class SimpleApp
 		doc = uri.read
 
 		# Generate contents body
-		res_body = "<h3>Search query: #{request.params['term']}</h3>URL: <a target='#blank' href=#{uri}>#{uri}</a><br>"
-
 		resObj = JSON.parse(doc)
+
 		count = resObj['resultCount']
+		res_body = "<h3>Search query: #{request.params['term']}</h3>URL: <a target='#blank' href=#{uri}>#{uri}</a><br>"
 		res_body << "Result count: #{count}<br>"
 
-		is_first = true
 		trackNo = 1
 
 		res_body << "<div id='slider' style='width:420px; height:200px'>"
 		resObj['results'].each { |con|
-			res_body << "<div id=t_#{trackNo} >"
-			res_body << "<img src=#{con['artworkUrl100']}>"
-			res_body << "<audio id=a_#{trackNo} controls autoplay>"
-=begin
-			if is_first then
-				res_body << "<audio id=a_#{trackNo} controls autoplay>"
-				is_first = false
-			else
-				res_body << "<audio id=a_#{trackNo} controls >"
-			end
-=end
-			res_body << "<source src=#{con['previewUrl']} />"
-			res_body << "<p>音声を再生するには、audioタグをサポートしたブラウザが必要です。</p>"
-			res_body << "</audio>"
-			res_body << "Track: #{con['trackName']}<br>"
-			res_body << "Artist: #{con['artistName']}<br>"
-			res_body << "Genre: #{con['primaryGenreName']}"
+			res_body << <<-"EOS"
+				<div id=t_#{trackNo} >
+					<img src=#{con['artworkUrl100']}>
+					<audio id=a_#{trackNo} controls autoplay>
+					<source src=#{con['previewUrl']} />
+					<p>音声を再生するには、audioタグをサポートしたブラウザが必要です。</p>
+					</audio>
+					Track: #{con['trackName']}<br>
+					Artist: #{con['artistName']}<br>
+					Genre: #{con['primaryGenreName']}
+				</div>
+			EOS
 
-			res_body << "</div>"	
 			trackNo = trackNo + 1	
 		}
 		res_body << "</div>"
