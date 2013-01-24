@@ -6,6 +6,7 @@ require 'open-uri'
 require 'json'
 require 'uri'
 require 'pp'
+require 'erb'
 
 # iTunes Search API
 # http://www.apple.com/itunes/affiliates/resources/documentation/itunes-store-web-service-search-api.html
@@ -57,6 +58,14 @@ class SimpleApp
 		uri = genReqURI2iTunes(request)
 		doc = uri.read
 
+		page_title = "title"
+		page_body = "hogehoge"
+
+		html = ""
+		File.open("./index.erb"){|f|
+			html = ERB.new(f.read).result(binding)
+		}
+=begin
 		# Generate contents body
 		resObj = JSON.parse(doc)
 
@@ -103,10 +112,12 @@ class SimpleApp
 				"__body__" => resBody,
 			}
 		)
-		
+=end		
+
+
 		# Response
-		response = Rack::Response.new([res_str], 200, {'Content-Type' => 'text/html','charset' => 'shift_jis'})
-		response["Content-Length"] = res_str.bytesize.to_s
+		response = Rack::Response.new([html], 200, {'Content-Type' => 'text/html','charset' => 'shift_jis'})
+		response["Content-Length"] = html.bytesize.to_s
 
 		return response.finish
 	end
