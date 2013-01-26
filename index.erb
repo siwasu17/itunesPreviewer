@@ -5,24 +5,90 @@
 <!-- For firefox audio tag -->
 <script type='text/javascript' src='http://api.html5media.info/1.1.4/html5media.min.js'></script>
 <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js'></script>
-<script type="text/javascript" src="js/jquery.slider.min.js"></script>
-<link href="css/jquery.slider.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
 $(function(){
 
-	var slideBeforeHook = function(){
+	var tRes = null;
+
+	function stopTrack(audioId){
+		var aud = document.getElementById('aud_' + audioId);
+		aud.pause();
 	};
 
-	var slideAfterHook = function(){
+	function playTrack(audioId){
+		var aud = document.getElementById('aud_' + audioId);
+		aud.play();
 	};
 
-	$('#slider').slider({autoplay: true,wait:30000,randomize: true, showControls:true, slidebefore: slideBeforeHook, slideafter: slideAfterHook });
+	function nextTrack(){
+		stopTrack(tRes.currentNo);
+		tRes.currentNo++;
+		showAudioContents();
+		playTrack(tRes.currentNo);
+	};
 
+	function showAudioContents(){
+		var nowTrack = tRes.results[tRes.currentNo];
+		var musicBlock
+			= "<div>"
+				+ "<div style='float:left;'>"
+				+ "<img src=" + nowTrack.artworkUrl100 + ">"
+				+ "</div>"
+				+ "Track: " + nowTrack.trackName + "<br>"
+				+ "Artist: " + nowTrack.artistName + "<br>"
+				+ "Genre: " + nowTrack.primaryGenreName + "<br>"
+				+ "<audio id=aud_" + tRes.currentNo + " controls src=" + nowTrack.previewUrl + ">"
+					+ "<p>To play music, you need a browser that supports audio tag.</p>"
+				+ "</audio>"
+				+ "<div style='clear:both;'></div>"
+			+ "</div>";
+
+		$('div#TL').append(musicBlock);
+		addAudioHandler(tRes.currentNo);
+	};
+
+	function addAudioHandler(audioId){
+
+			$('#aud_'+audioId).bind('play', function(){
+				$('#log').append('<li>No.' + audioId + ' play</li>');
+			});
+			$('#aud_'+audioId).bind('playing', function(){
+				$('#log').append('<li>No.' + audioId + ' playing</li>');
+			});
+
+			$('#aud_'+audioId).bind('ended', function(){
+					$('#log').append('<li>No.' + audioId + ' end</li>');
+					nextTrack();
+			});
+	};
+	function callTunesAPI(){
+		$.getJSON(
+			'/tunesapi',
+			{ county: "JP" , term: "miku", media: "music", entity: "song", attribute: "songTerm" , limit: 5 },
+			function (data){
+				tRes = data;
+				tRes.currentNo = 0;
+				showAudioContents();
+				playTrack(tRes.currentNo);
+			}
+		);
+	};
+
+	$('#btn').click(function(){
+		nextTrack();
+	});
+
+	callTunesAPI();
 })
 </script>
-<title><%= page_title %></title>
+<title>iTunesPreviewer</title>
 </head>
 <body>
-<%= page_body %>
+Query: <%= request.params['term'] %><br>
+URL: <a target="_blank" href=<%= uri %>><%= uri %></a><br>
+<button id="btn">NEXT</button>
+<div id="TL">
+</div>
+<div id="log"></div>
 </body>
 </html>
