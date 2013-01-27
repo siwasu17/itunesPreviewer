@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang='ja'>
+<head>
+<meta charset=utf-8>
+<!-- For firefox audio tag -->
+<script type='text/javascript' src='http://api.html5media.info/1.1.4/html5media.min.js'></script>
+<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js'></script>
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<script src="js/bootstrap.min.js"></script>
+<script type="text/javascript">
+$(function(){
+
+	var tRes = null;
+	var totalOffset = 0;
+
+	function stopAllTrack(){
+		$('.audio').each(function(){
+			$(this).get(0).pause();
+		});
+	};
+
+	function stopTrack(audioId){
+		var aud = $('#aud_' + audioId).get(0);
+		aud.pause();
+	};
+
+	function playTrack(audioId){
+		var aud = $('#aud_' + audioId).get(0);
+		aud.play();
+	};
+
+	function nextTrack(){
+		stopTrack(tRes.currentNo + totalOffset);
+		tRes.currentNo++;
+		if(tRes.currentNo < tRes.resultCount){
+			//Normal flow
+			showAudioContents();
+			playTrack(tRes.currentNo + totalOffset);
+		}else{
+			//All track played
+			totalOffset += tRes.resultCount;
+			defParam.offset = totalOffset;
+			callTunesAPI(defParam);
+		}
+	};
+
+	function showAudioContents(){
+		var nowTrack = tRes.results[tRes.currentNo];
+		//できれば直指定したい
+		var youTubeImg = "<img src='http://favicon.qfor.info/f/https://www.youtube.com/' />";
+		var musicBlock
+			= "<div class='well-small' id=track_" + (tRes.currentNo + totalOffset) + ">"
+				+ "<div style='float:left;'>"
+				+ "<img src=" + nowTrack.artworkUrl100 + ">"
+				+ "</div>"
+				+ "<audio class='audio' id=aud_" + (tRes.currentNo + totalOffset) + " controls preload src=" + nowTrack.previewUrl + ">"
+					+ "<p>To play music, you need a browser that supports audio tag.</p>"
+				+ "</audio><br>"
+				+ "<i class='icon-music'/> " + nowTrack.trackName 
+				+ " <a target='_blank' href=http://www.youtube.com/results?search_query=" + encodeURI(nowTrack.trackName) + ">" + youTubeImg + "</a><br>"
+				+ "<i class='icon-user' />  " + nowTrack.artistName
+				+ " <a target='_blank' href=http://www.youtube.com/results?search_query=" + encodeURI(nowTrack.artistName) + ">" + youTubeImg + "</a><br>"
+				+ "<i class='icon-tag' /> " + nowTrack.primaryGenreName + "<br>"
+				+ "<div style='clear:both;'></div>"
+			+ "</div>";
+
+		$('div#history_head').after(musicBlock);
+		addAudioHandler(tRes.currentNo + totalOffset);
+	};
+
+	function addAudioHandler(audioId){
+			$('#aud_'+audioId).bind('play', function(){
+				console.log('aud_' + audioId + ' play');
+			});
+			$('#aud_'+audioId).bind('playing', function(){
+				console.log('aud_' + audioId + ' playing');
+			});
+			$('#aud_'+audioId).bind('ended', function(){
+				console.log('aud_' + audioId + ' ended');
+				nextTrack();
+			});
+	};
+
+	function callTunesAPI(paramJSON){
+		console.log(paramJSON);
+
+		$.getJSON(
+			'/tunesapi',
+			paramJSON,
+			function (data){
+				tRes = data;
+				console.log(tRes); //DEBUG
+
+				if(tRes.resultCount != 0){
+					//再生する楽曲の配列の要素番号
+					tRes.currentNo = 0;	
+					showAudioContents();
+					playTrack(tRes.currentNo + totalOffset);
+				}else{
+					$('div#history_head').after("<p>No More Result.</p>");
+				}
+			}
+		);
+	};
+
+	$('#next_btn').click(function(){
+		nextTrack();
+	});
+
+	$('#stop_btn').click(function(){
+		stopAllTrack();
+	});
+
+	var defParam = {
+				county: "<%= request.params['country'] || 'JP' %>",
+				term: "<%= request.params['term'] || '3' %>",
+				media: "<%= request.params['media'] || 'music' %>",
+				entity: "<%= request.params['entity'] || 'song' %>",
+				attribute: "<%= request.params['attribute'] || 'genreIndex' %>",
+				limit: "<%= request.params['limit'] || 5 %>",
+				offset: "<%= request.params['offset'] || 0 %>"
+	};
+	callTunesAPI(defParam);
+
+})
+</script>
+<title>JUKE 30 !</title>
+</head>
+<body>
+<div class="navbar">
+    <div class="navbar-inner">
+		<a class="brand" href="#">JUKE 30 !</a>
+<!--
+		<ul class="nav">
+			<li class="active"><a href="#">Home</a></li>
+			<li><a href="#">Link</a></li>
+			<li><a href="#">Link</a></li>
+		</ul>
+-->
+		<ul class="nav">
+			<li>
+				<button id="stop_btn" class="btn" >STOP</button>
+			</li>
+			<li>
+				<button id="next_btn" class="btn" >NEXT</button>
+			</li>
+		</ul>
+		<form class="navbar-search pull-left">
+			<input type="text" class="search-query" placeholder="Search">
+		</form>
+    </div>
+</div>
+<div class="container">
+	<div class="row-fluid">
+		<div class="span2"></div>
+		<div class="span6 well-small">
+			<div id="TL">
+				<div id='history_head'></div>
+			</div>
+		</div>
+	</div>
+</div>
+</body>
+</html>
