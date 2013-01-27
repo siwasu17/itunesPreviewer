@@ -51,5 +51,5 @@ class SimpleApp
 	end
 end
 
-use Rack::Static, :urls => ["/js","/css"]
+use Rack::Static, :urls => ["/js","/css", "/img"]
 run SimpleApp.new
