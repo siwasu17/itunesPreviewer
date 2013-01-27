@@ -14,22 +14,16 @@ require 'erb'
 class SimpleApp
 
 	def genReqURI2iTunes(req)
-		country = req.params['country'] || 'JP'
-		term = req.params['term'] || 'miku'
-		media = req.params['media']  || 'music'
-		entity = req.params['entity'] || 'song'
-		attribute = req.params['attribute'] || 'songTerm'
-		limit = req.params['limit'] || 5
-
 		# リクエストURI生成
 		URI.parse(
 			"http://itunes.apple.com/search?"\
-			"country=#{country}"\
-			"&term=#{term}"\
-			"&media=#{media}"\
-			"&entity=#{entity}"\
-			"&attribute=#{attribute}"\
-			"&limit=#{limit}"
+			"country=#{req.params['country']}"\
+			"&term=#{req.params['term']}"\
+			"&media=#{req.params['media']}"\
+			"&entity=#{req.params['entity']}"\
+			"&attribute=#{req.params['attribute']}"\
+			"&limit=#{req.params['limit']}"\
+			"&offset=#{req.params['offset']}"
 		)
 	end
 
@@ -37,27 +31,22 @@ class SimpleApp
 		# Get request
 		request = Rack::Request.new(env)
 
+		uri = genReqURI2iTunes(request)
+
 		if request.path_info == '/tunesapi' then
-			uri = genReqURI2iTunes(request)
-			json = uri.read
+			contents = uri.read
 
-			# Response
-			response = Rack::Response.new([json], 200, {'Content-Type' => 'application/json','charset' => 'utf-8'})
-			response["Content-Length"] = json.bytesize.to_s
+			response = Rack::Response.new([contents], 200, {'Content-Type' => 'application/json','charset' => 'utf-8'})
 		else
-			uri = genReqURI2iTunes(request)
-
-			html = ""
+			contents = ""
 			File.open("./index.erb"){|f|
-				html = ERB.new(f.read).result(binding)
+				contents = ERB.new(f.read).result(binding)
 			}
 
-			# Response
-			response = Rack::Response.new([html], 200, {'Content-Type' => 'text/html','charset' => 'utf-8'})
-			response["Content-Length"] = html.bytesize.to_s
-
+			response = Rack::Response.new([contents], 200, {'Content-Type' => 'text/html','charset' => 'utf-8'})
 		end
 
+		response["Content-Length"] = contents.bytesize.to_s
 		return response.finish
 	end
 end

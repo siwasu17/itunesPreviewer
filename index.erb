@@ -9,6 +9,7 @@
 $(function(){
 
 	var tRes = null;
+	var totalOffset = 0;
 
 	function stopTrack(audioId){
 		var aud = document.getElementById('aud_' + audioId);
@@ -21,10 +22,18 @@ $(function(){
 	};
 
 	function nextTrack(){
-		stopTrack(tRes.currentNo);
+		stopTrack(tRes.currentNo + totalOffset);
 		tRes.currentNo++;
-		showAudioContents();
-		playTrack(tRes.currentNo);
+		if(tRes.currentNo < tRes.resultCount){
+			//Normal flow
+			showAudioContents();
+			playTrack(tRes.currentNo + totalOffset);
+		}else{
+			//All track played
+			totalOffset += tRes.resultCount;
+			defParam.offset = totalOffset;
+			callTunesAPI(defParam);
+		}
 	};
 
 	function showAudioContents(){
@@ -37,57 +46,74 @@ $(function(){
 				+ "Track: " + nowTrack.trackName + "<br>"
 				+ "Artist: " + nowTrack.artistName + "<br>"
 				+ "Genre: " + nowTrack.primaryGenreName + "<br>"
-				+ "<audio id=aud_" + tRes.currentNo + " controls src=" + nowTrack.previewUrl + ">"
+				+ "<audio id=aud_" + (tRes.currentNo + totalOffset) + " controls src=" + nowTrack.previewUrl + ">"
 					+ "<p>To play music, you need a browser that supports audio tag.</p>"
 				+ "</audio>"
 				+ "<div style='clear:both;'></div>"
 			+ "</div>";
 
-		$('div#TL').append(musicBlock);
-		addAudioHandler(tRes.currentNo);
+		$('div#history_head').after(musicBlock);
+		addAudioHandler(tRes.currentNo + totalOffset);
 	};
 
 	function addAudioHandler(audioId){
-
 			$('#aud_'+audioId).bind('play', function(){
-				$('#log').append('<li>No.' + audioId + ' play</li>');
+				console.log('aud_' + audioId + ' play');
 			});
 			$('#aud_'+audioId).bind('playing', function(){
-				$('#log').append('<li>No.' + audioId + ' playing</li>');
+				console.log('aud_' + audioId + ' playing');
 			});
-
 			$('#aud_'+audioId).bind('ended', function(){
-					$('#log').append('<li>No.' + audioId + ' end</li>');
+					console.log('aud_' + audioId + ' ended');
 					nextTrack();
 			});
 	};
-	function callTunesAPI(){
+
+	function callTunesAPI(paramJSON){
+		console.log(paramJSON);
+
 		$.getJSON(
 			'/tunesapi',
-			{ county: "JP" , term: "miku", media: "music", entity: "song", attribute: "songTerm" , limit: 5 },
+			paramJSON,
 			function (data){
 				tRes = data;
-				tRes.currentNo = 0;
-				showAudioContents();
-				playTrack(tRes.currentNo);
+				console.log(tRes); //DEBUG
+
+				if(tRes.resultCount != 0){
+					//再生する楽曲の配列の要素番号
+					tRes.currentNo = 0;	
+					showAudioContents();
+					playTrack(tRes.currentNo + totalOffset);
+				}else{
+					$('div#history_head').after("<p>No Result</p>");
+				}
 			}
 		);
 	};
 
-	$('#btn').click(function(){
+	$('#next_btn').click(function(){
 		nextTrack();
 	});
 
-	callTunesAPI();
+	var defParam = {
+				county: "<%= request.params['country'] || 'JP' %>",
+				term: "<%= request.params['term'] || 'miku' %>",
+				media: "<%= request.params['media'] || 'music' %>",
+				entity: "<%= request.params['entity'] || 'song' %>",
+				attribute: "<%= request.params['attribute'] || 'artistTerm' %>",
+				limit: "<%= request.params['limit'] || 2 %>",
+				offset: "<%= request.params['offset'] || 0 %>"
+	};
+	callTunesAPI(defParam);
+
 })
 </script>
 <title>iTunesPreviewer</title>
 </head>
 <body>
-Query: <%= request.params['term'] %><br>
-URL: <a target="_blank" href=<%= uri %>><%= uri %></a><br>
-<button id="btn">NEXT</button>
+<button id="next_btn">NEXT</button>
 <div id="TL">
+	<div id='history_head'></div>
 </div>
 <div id="log"></div>
 </body>
