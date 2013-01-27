@@ -8,6 +8,17 @@
 <link href="css/bootstrap.min.css" rel="stylesheet">
 <script src="js/bootstrap.min.js"></script>
 <script type="text/javascript">
+Array.prototype.shuffle = function() {
+    var i = this.length;
+    while (i) {
+        var j = Math.floor(Math.random() * i);
+        var t = this[--i];
+        this[i] = this[j];
+        this[j] = t;
+    }
+    return this;
+}
+
 $(function(){
 
 	var tRes = null;
@@ -17,17 +28,17 @@ $(function(){
 		$('.audio').each(function(){
 			$(this).get(0).pause();
 		});
-	};
+	}
 
 	function stopTrack(audioId){
 		var aud = $('#aud_' + audioId).get(0);
 		aud.pause();
-	};
+	}
 
 	function playTrack(audioId){
 		var aud = $('#aud_' + audioId).get(0);
 		aud.play();
-	};
+	}
 
 	function nextTrack(){
 		stopTrack(tRes.currentNo + totalOffset);
@@ -42,7 +53,7 @@ $(function(){
 			defParam.offset = totalOffset;
 			callTunesAPI(defParam);
 		}
-	};
+	}
 
 	function showAudioContents(){
 		var nowTrack = tRes.results[tRes.currentNo];
@@ -66,7 +77,7 @@ $(function(){
 
 		$('div#history_head').after(musicBlock);
 		addAudioHandler(tRes.currentNo + totalOffset);
-	};
+	}
 
 	function addAudioHandler(audioId){
 			$('#aud_'+audioId).bind('play', function(){
@@ -79,7 +90,7 @@ $(function(){
 				console.log('aud_' + audioId + ' ended');
 				nextTrack();
 			});
-	};
+	}
 
 	function callTunesAPI(paramJSON){
 		console.log(paramJSON);
@@ -89,6 +100,7 @@ $(function(){
 			paramJSON,
 			function (data){
 				tRes = data;
+				tRes.results.shuffle();
 				console.log(tRes); //DEBUG
 
 				if(tRes.resultCount != 0){
@@ -101,7 +113,7 @@ $(function(){
 				}
 			}
 		);
-	};
+	}
 
 	$('#next_btn').click(function(){
 		nextTrack();
@@ -117,7 +129,7 @@ $(function(){
 				media: "<%= request.params['media'] || 'music' %>",
 				entity: "<%= request.params['entity'] || 'song' %>",
 				attribute: "<%= request.params['attribute'] || 'genreIndex' %>",
-				limit: "<%= request.params['limit'] || 5 %>",
+				limit: "<%= request.params['limit'] || 50 %>",
 				offset: "<%= request.params['offset'] || 0 %>"
 	};
 	callTunesAPI(defParam);
@@ -130,29 +142,23 @@ $(function(){
 <div class="navbar">
     <div class="navbar-inner">
 		<a class="brand" href="#">JUKE 30 !</a>
-<!--
-		<ul class="nav">
-			<li class="active"><a href="#">Home</a></li>
-			<li><a href="#">Link</a></li>
-			<li><a href="#">Link</a></li>
-		</ul>
--->
-		<ul class="nav">
-			<li>
-				<button id="stop_btn" class="btn" >STOP</button>
-			</li>
-			<li>
-				<button id="next_btn" class="btn" >NEXT</button>
-			</li>
-		</ul>
 		<form class="navbar-search pull-left">
 			<input type="text" class="search-query" placeholder="Search">
 		</form>
     </div>
 </div>
-<div class="container">
-	<div class="row-fluid">
-		<div class="span2"></div>
+<div class="container-fluid">
+	<div class="row">
+		<div class="span2">
+			<button id="stop_btn" class="btn btn-inverse" >STOP</button>
+			<button id="next_btn" class="btn btn-info" >NEXT</button>
+			<ul class="nav nav-pills nav-stacked">
+				<li class="nav-header">GENRE</li>
+				<% genre.each do |k,v| %>
+				<%= "<li><a href='?attribute=genreIndex&term=#{k}'>#{v}</a></li>" %>
+				<% end %>
+			</ul>
+		</div>
 		<div class="span6 well-small">
 			<div id="TL">
 				<div id='history_head'></div>

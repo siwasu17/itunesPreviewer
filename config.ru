@@ -38,6 +38,51 @@ class SimpleApp
 
 			response = Rack::Response.new([contents], 200, {'Content-Type' => 'application/json','charset' => 'utf-8'})
 		else
+
+			genre = { 
+				2 => 'Alternative',
+				3 => 'Anime',
+				4 => 'Blues',
+				5 => 'Brazillian',
+				6 => 'Children\'s Music',
+				7 => 'Chinese',
+				8 => 'Christian & Gospel',
+				9 => 'Classical',
+				10 => 'Comedy',
+				11 => 'Country',
+				12 => 'Dance',
+				13 => 'Disney',
+				14 => 'Easy Listening',
+				15 => 'Electronic',
+				16 => 'Enka',
+				17 => 'Fitness & Workout',
+				18 => 'French Pop',
+				19 => 'German Folk',
+				20 => 'German Pop',
+				21 => 'Hip Hop/Rap',
+				22 => 'Holiday',
+				23 => 'Indian',
+				24 => 'Instrumental',
+				25 => 'J-Pop',
+				26 => 'Jazz',
+				27 => 'K-Pop',
+				28 => 'Karaoke',
+				29 => 'Kayokyoku',
+				30 => 'Korean',
+				31 => 'Latin',
+				32 => 'Kayokyoku',
+				33 => 'Opera',
+				34 => 'Pop',
+				35 => 'R&B/Soul',
+				36 => 'Reggae',
+				37 => 'Rock',
+				38 => 'Singer/Songwriter',
+				39 => 'Soundtrack',
+				40 => 'Spoken Word',
+				41 => 'Vocal',
+				42 => 'World'
+			}
+
 			contents = ""
 			File.open("./index.erb"){|f|
 				contents = ERB.new(f.read).result(binding)
