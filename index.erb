@@ -58,7 +58,7 @@ $(function(){
 	function showAudioContents(){
 		var nowTrack = tRes.results[tRes.currentNo];
 		//できれば直指定したい
-		var youTubeImg = "<img src='http://favicon.qfor.info/f/https://www.youtube.com/' />";
+		var youTubeImg = "<img src='/img/youtube_favi.ico' >";
 		var musicBlock
 			= "<div class='well-small' id=track_" + (tRes.currentNo + totalOffset) + ">"
 				+ "<div style='float:left;'>"
@@ -136,12 +136,12 @@ $(function(){
 
 })
 </script>
-<title>JUKE 30 !</title>
+<title>JUKE 30!</title>
 </head>
 <body>
 <div class="navbar">
     <div class="navbar-inner">
-		<a class="brand" href="#">JUKE 30 !</a>
+		<a class="brand" href="#">JUKE 30! </a>
 		<form class="navbar-search pull-left" action="/?attribute=artistTerm">
 			<input type="hidden" name="attribute" value="artistTerm">
 			<input type="text" class="search-query" name="term" placeholder="Search">
